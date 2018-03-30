@@ -22,24 +22,65 @@ class VarsField(serializers.CharField):
 class SessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
-        fields = ('id', 'is_demo', 'num_participants', 'code', 'vars', )
+        fields = ('id', 'is_demo', 'num_participants', 'code', 'vars',)
+
+
+from django.db.models import ForeignKey
+
+
+def get_fk_model(model, fieldname):
+    '''returns None if not foreignkey, otherswise the relevant model'''
+    field_object, model, direct, m2m = model._meta.get_field(fieldname)
+    if not m2m and direct and isinstance(field_object, ForeignKey):
+        return field_object.rel.to
+    return None
+
 
 class TrackSerializer(serializers.ModelSerializer):
     class Meta:
-        from testing_ext.models import Player
-        model = Player
-        fields = ('id', 'myfield')
+        fields = ('round_number')
+
+    def __init__(self, model=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if model:
+            print('BEFORE', self.Meta.fields)
+            self.Meta.model = model
+            self.Meta.fields = ('round_number', 'pk')
+            names = [f.name for f in model._meta.get_fields()]
+            self.Meta.fields = names
+            print('AFTER', self.Meta.fields)
+            # self.Meta.model = Participant
+
 
 class ParticipantSerializer(serializers.ModelSerializer):
-    testing_ext_player = TrackSerializer(many=True, read_only=True)
+    def __init__(self, *args, **kwargs):
+        print(args)
+        print(kwargs)
+
+        self.Meta.fields = self.Meta.fields + ('vars',)
+        self.Meta.model = Participant
+        super().__init__(*args, **kwargs)
 
     class Meta:
-        model = Participant
-        fields = ('id', 'code', 'vars','testing_ext_player' )
-    def to_representation(self, instance):
-        app_sequence = instance.session.config['app_sequence']
 
-        ret= super().to_representation(instance)
+        fields = ('id', 'code',)
+
+    def to_representation(self, instance):
+
+        from otree.models.player import BasePlayer
+        app_sequence = instance.session.config['app_sequence']
+        print(app_sequence)
+        fff = instance._meta.get_fields()
+        for f in fff:
+            a = instance._meta.get_field(f.name)
+            if f.related_model:
+                if f.related_model.__base__ is BasePlayer:
+                    print('settings:::: {}'.format(f.name))
+                    self.Meta.fields = self.Meta.fields + (f.name,)
+                    setattr(self, f.name, TrackSerializer(many=True, read_only=True, model=f.related_model))
+
+                    # print(isinstance(a, ForeignKey))
+        ret = super().to_representation(instance)
         return ret
 
 

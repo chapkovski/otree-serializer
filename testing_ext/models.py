@@ -32,5 +32,8 @@ class Group(BaseGroup):
     pass
 
 
-class Player(BasePlayer):
+# from django.db import models
+
+
+class Player( BasePlayer):
     myfield = models.CharField()
