@@ -36,50 +36,39 @@ def get_fk_model(model, fieldname):
     return None
 
 
+from testing_ext.models import Player
+
+
 class TrackSerializer(serializers.ModelSerializer):
     class Meta:
-        fields = ('round_number')
+        model = Player
+        fields = ['id', 'id_in_group', '_payoff', 'participant', 'session', 'round_number', '_gbat_arrived',
+                  '_gbat_grouped', 'myfield', 'subsession', 'group']
 
     def __init__(self, model=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if model:
-            print('BEFORE', self.Meta.fields)
             self.Meta.model = model
             self.Meta.fields = ('round_number', 'pk')
             names = [f.name for f in model._meta.get_fields()]
             self.Meta.fields = names
-            print('AFTER', self.Meta.fields)
-            # self.Meta.model = Participant
 
 
 class ParticipantSerializer(serializers.ModelSerializer):
-    def __init__(self, *args, **kwargs):
-        print(args)
-        print(kwargs)
-
-        self.Meta.fields = self.Meta.fields + ('vars',)
-        self.Meta.model = Participant
-        super().__init__(*args, **kwargs)
-
     class Meta:
-
+        model = Participant
+        depth = 1
         fields = ('id', 'code',)
 
     def to_representation(self, instance):
-
         from otree.models.player import BasePlayer
-        app_sequence = instance.session.config['app_sequence']
-        print(app_sequence)
         fff = instance._meta.get_fields()
         for f in fff:
-            a = instance._meta.get_field(f.name)
             if f.related_model:
                 if f.related_model.__base__ is BasePlayer:
-                    print('settings:::: {}'.format(f.name))
                     self.Meta.fields = self.Meta.fields + (f.name,)
                     setattr(self, f.name, TrackSerializer(many=True, read_only=True, model=f.related_model))
 
-                    # print(isinstance(a, ForeignKey))
         ret = super().to_representation(instance)
         return ret
 
@@ -103,48 +92,71 @@ def get_export_response(request, file_prefix):
 
 
 class SessionUserViewSet(viewsets.ModelViewSet):
-    queryset = Session.objects.filter(num_participants=11)
     queryset = Participant.objects.all()
     serializer_class = ParticipantSerializer
 
     def __init__(self, *args, **kwargs):
         print('I AM IN INIT')
         super().__init__(*args, **kwargs)
-        # def list(self, request, *args, **kwargs):
-        #     print('lLLLLLLL')
-        #     queryset = self.filter_queryset(self.get_queryset())
-        #
-        #     page = self.paginate_queryset(queryset)
-        #     if page is not None:
-        #         serializer = self.get_serializer(page, many=True)
-        #         return self.get_paginated_response(serializer.data)
-        #
-        #     serializer = self.get_serializer(queryset, many=True)
-        #     return Response(serializer.data)
 
 
-class SpecificSessionDataView(TemplateView):
+from rest_framework import generics
+
+
+class SpecificSessionDataView(generics.ListAPIView):
     url_name = 'json_export'
     url_pattern = r'^json_session/(?P<session_code>.*)/$'
+    queryset = Participant.objects.all()
+    serializer_class = ParticipantSerializer
 
     def get(self, request, *args, **kwargs):
-        session_code = kwargs['session_code']
-        response, file_extension = get_export_response(
-            request, session_code)
-        writer = csv.writer(response)
-        q = Session.objects.all()
-        serializer = SessionSerializer(q)
+        res = super().get(request, *args, **kwargs)
+        queryset = self.filter_queryset(self.get_queryset())
+        ser = self.get_serializer(queryset, many=True)
+        print(ser.data)
+        # session_code = kwargs['session_code']
+        # response, file_extension = get_export_response(
+        #     request, session_code)
+        # writer = csv.writer(response)
+        # # q = Session.objects.all()
+        # q = Participant.objects.all()
+        # serializer = ParticipantSerializer(q)
         # print('AAAA', serializer.data)
         from rest_framework.renderers import JSONRenderer
-
-        json = JSONRenderer().render(serializer.data)
+        #
+        json = JSONRenderer().render(ser.data, renderer_context={'indent':4})
         print('BBBB', json)
         with open("Output.txt", "w") as text_file:
             text_file.write("Purchase Amount: {0}".format(json))
-        l = [[1, 2, 3]]
-        for item in l:
-            writer.writerow(item)
-        return response
+        # l = [[1, 2, 3]]
+        # for item in l:
+        #     writer.writerow(item)
+        return res
+
+
+# class SpecificSessionDataView(TemplateView):
+#     url_name = 'json_export'
+#     url_pattern = r'^json_session/(?P<session_code>.*)/$'
+#
+#     def get(self, request, *args, **kwargs):
+#         session_code = kwargs['session_code']
+#         response, file_extension = get_export_response(
+#             request, session_code)
+#         writer = csv.writer(response)
+#         # q = Session.objects.all()
+#         q = Participant.objects.all()
+#         serializer = ParticipantSerializer(q)
+#         print('AAAA', serializer.data)
+#         from rest_framework.renderers import JSONRenderer
+#
+#         json = JSONRenderer().render(serializer.data)
+#         print('BBBB', json)
+#         with open("Output.txt", "w") as text_file:
+#             text_file.write("Purchase Amount: {0}".format(json))
+#         l = [[1, 2, 3]]
+#         for item in l:
+#             writer.writerow(item)
+#         return response
 
 
 class AllSessionsList(TemplateView):

@@ -36,4 +36,5 @@ class Group(BaseGroup):
 
 
 class Player( BasePlayer):
+    another_field = models.CharField(default='asdfdsa')
     myfield = models.CharField()
