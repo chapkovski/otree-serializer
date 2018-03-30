@@ -10,7 +10,8 @@ from rest_framework import routers, serializers, viewsets
 from django.db.models import ForeignKey
 from testing_ext.models import Player
 from rest_framework import generics
-
+from otree.models.subsession import BaseSubsession
+from otree.models.group import BaseGroup
 
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,16 +55,42 @@ class SubSessionSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
 
 
-from testing_ext.models import Subsession
+    def get_fields(self):
+        fields = super().get_fields()
+        fff = self.Meta.model._meta.get_fields()
+        for f in fff:
+            if f.related_model:
+                if f.related_model.__base__ is BaseGroup:
+                    fields['group_set'] = SubSessionSerializer(many=True, model=f.related_model)
+
+        return fields
 
 
 class SessionSerializer(serializers.ModelSerializer):
     participant_set = ParticipantSerializer(many=True)
-    testing_ext_subsession = SubSessionSerializer(many=True, model=Subsession)
 
+    # testing_ext_subsession =
     class Meta:
         model = Session
-        fields = ('id', 'is_demo', 'num_participants', 'code', 'vars', 'participant_set', 'testing_ext_subsession')
+        fields = ('id', 'is_demo', 'num_participants', 'code', 'vars', 'participant_set',)
+
+    def __init__(self, instance, *args, **kwargs):
+
+        # print()
+        # for f in self.Meta.model._meta.get_fields():
+        #     if f.name == 'testing_ext_subsession':
+        #         setattr(self.__class__, f.name, SubSessionSerializer(many=True, model=Subsession))
+        super().__init__(instance, *args, **kwargs)
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fff = self.Meta.model._meta.get_fields()
+        for f in fff:
+            if f.related_model:
+                if f.related_model.__base__ is BaseSubsession:
+                    fields[f.name] = SubSessionSerializer(many=True, model=f.related_model)
+
+        return fields
 
 
 class SpecificSessionDataView(generics.ListAPIView):
