@@ -6,44 +6,15 @@ from otree.models import Session, Participant
 from django.views.generic import TemplateView
 import datetime
 from django.shortcuts import render
-
-import json
-from django.http import JsonResponse
-
 from rest_framework import routers, serializers, viewsets
-
-
-class VarsField(serializers.CharField):
-    def to_representation(self, obj):
-        print('I AM IN REPRE CALLL')
-        return str(obj.vars)
-
-
-class SessionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Session
-        fields = ('id', 'is_demo', 'num_participants', 'code', 'vars',)
-
-
 from django.db.models import ForeignKey
-
-
-def get_fk_model(model, fieldname):
-    '''returns None if not foreignkey, otherswise the relevant model'''
-    field_object, model, direct, m2m = model._meta.get_field(fieldname)
-    if not m2m and direct and isinstance(field_object, ForeignKey):
-        return field_object.rel.to
-    return None
-
-
 from testing_ext.models import Player
+from rest_framework import generics
 
 
-class TrackSerializer(serializers.ModelSerializer):
+class PlayerSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Player
-        fields = ['id', 'id_in_group', '_payoff', 'participant', 'session', 'round_number', '_gbat_arrived',
-                  '_gbat_grouped', 'myfield', 'subsession', 'group']
+        ...
 
     def __init__(self, model=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -67,96 +38,47 @@ class ParticipantSerializer(serializers.ModelSerializer):
             if f.related_model:
                 if f.related_model.__base__ is BasePlayer:
                     self.Meta.fields = self.Meta.fields + (f.name,)
-                    setattr(self, f.name, TrackSerializer(many=True, read_only=True, model=f.related_model))
+                    setattr(self, f.name, PlayerSerializer(many=True, read_only=True, model=f.related_model))
 
         ret = super().to_representation(instance)
         return ret
 
 
-def get_export_response(request, file_prefix):
-    if bool(request.GET.get('xlsx')):
-        content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        file_extension = 'xlsx'
-    else:
-        content_type = 'text/csv'
-        file_extension = 'csv'
-    response = HttpResponse(
-        content_type=content_type)
-    response['Content-Disposition'] = 'attachment; filename="{}"'.format(
-        '{} (accessed {}).{}'.format(
-            file_prefix,
-            datetime.date.today().isoformat(),
-            file_extension
-        ))
-    return response, file_extension
+class SubSessionSerializer(serializers.ModelSerializer):
+    class Meta:
+        ...
 
-
-class SessionUserViewSet(viewsets.ModelViewSet):
-    queryset = Participant.objects.all()
-    serializer_class = ParticipantSerializer
-
-    def __init__(self, *args, **kwargs):
-        print('I AM IN INIT')
+    def __init__(self, model, *args, **kwargs):
+        self.Meta.model = model
+        self.Meta.fields = ('id', 'round_number')
         super().__init__(*args, **kwargs)
 
 
-from rest_framework import generics
+from testing_ext.models import Subsession
+
+
+class SessionSerializer(serializers.ModelSerializer):
+    participant_set = ParticipantSerializer(many=True)
+    testing_ext_subsession = SubSessionSerializer(many=True, model=Subsession)
+
+    class Meta:
+        model = Session
+        fields = ('id', 'is_demo', 'num_participants', 'code', 'vars', 'participant_set', 'testing_ext_subsession')
 
 
 class SpecificSessionDataView(generics.ListAPIView):
     url_name = 'json_export'
     url_pattern = r'^json_session/(?P<session_code>.*)/$'
-    queryset = Participant.objects.all()
-    serializer_class = ParticipantSerializer
+    serializer_class = SessionSerializer
+
+    def get_queryset(self):
+        session_code = self.kwargs['session_code']
+        q = Session.objects.filter(code=session_code)
+        return q
 
     def get(self, request, *args, **kwargs):
         res = super().get(request, *args, **kwargs)
-        queryset = self.filter_queryset(self.get_queryset())
-        ser = self.get_serializer(queryset, many=True)
-        print(ser.data)
-        # session_code = kwargs['session_code']
-        # response, file_extension = get_export_response(
-        #     request, session_code)
-        # writer = csv.writer(response)
-        # # q = Session.objects.all()
-        # q = Participant.objects.all()
-        # serializer = ParticipantSerializer(q)
-        # print('AAAA', serializer.data)
-        from rest_framework.renderers import JSONRenderer
-        #
-        json = JSONRenderer().render(ser.data, renderer_context={'indent':4})
-        print('BBBB', json)
-        with open("Output.txt", "w") as text_file:
-            text_file.write("Purchase Amount: {0}".format(json))
-        # l = [[1, 2, 3]]
-        # for item in l:
-        #     writer.writerow(item)
         return res
-
-
-# class SpecificSessionDataView(TemplateView):
-#     url_name = 'json_export'
-#     url_pattern = r'^json_session/(?P<session_code>.*)/$'
-#
-#     def get(self, request, *args, **kwargs):
-#         session_code = kwargs['session_code']
-#         response, file_extension = get_export_response(
-#             request, session_code)
-#         writer = csv.writer(response)
-#         # q = Session.objects.all()
-#         q = Participant.objects.all()
-#         serializer = ParticipantSerializer(q)
-#         print('AAAA', serializer.data)
-#         from rest_framework.renderers import JSONRenderer
-#
-#         json = JSONRenderer().render(serializer.data)
-#         print('BBBB', json)
-#         with open("Output.txt", "w") as text_file:
-#             text_file.write("Purchase Amount: {0}".format(json))
-#         l = [[1, 2, 3]]
-#         for item in l:
-#             writer.writerow(item)
-#         return response
 
 
 class AllSessionsList(TemplateView):
