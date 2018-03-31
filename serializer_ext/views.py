@@ -1,19 +1,56 @@
-import csv
-from django.http import HttpResponse
-from django.urls import reverse_lazy
-from django.utils.text import slugify
 from otree.models import Session, Participant
 from django.views.generic import TemplateView
-import datetime
 from django.shortcuts import render
 from rest_framework import routers, serializers, viewsets
-from django.db.models import ForeignKey
-from testing_ext.models import Player
 from rest_framework import generics
 from otree.models.subsession import BaseSubsession
 from otree.models.group import BaseGroup
+from otree.models.player import BasePlayer
 
-class PlayerSerializer(serializers.ModelSerializer):
+block_fields = ['_gbat_arrived', '_gbat_grouped', '_index_in_subsessions', '_index_in_pages', '_index_in_pages',
+                '_waiting_for_ids', '_last_page_timestamp', '_last_request_timestamp', 'is_on_wait_page',
+                '_current_page_name', '_current_app_name', '_round_number', '_current_form_page_url', ]
+
+
+class oTreeSerializer(serializers.ModelSerializer):
+    class Meta:
+        ...
+
+    def get_field_names(self, declared_fields, info):
+        res = super().get_field_names(declared_fields, info)
+        res = [r for r in res if r not in block_fields]
+        return res
+
+    def __init__(self, model=None, further_models=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.further_models = further_models
+        if model:
+            self.Meta.model = model
+            names = [f.name for f in model._meta.get_fields() if f.name not in block_fields]
+            self.Meta.fields = names
+
+
+class PlayerSerializer(oTreeSerializer):
+    ...
+
+
+class ParticipantSerializer(oTreeSerializer):
+    class Meta:
+        model = Participant
+        ...
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fff = self.Meta.model._meta.get_fields()
+        for f in fff:
+            if f.related_model:
+                if f.related_model.__base__ is BasePlayer:
+                    fields[f.name] = PlayerSerializer(many=True, model=f.related_model)
+
+        return fields
+
+
+class SubSessionSerializer(oTreeSerializer):
     class Meta:
         ...
 
@@ -21,39 +58,8 @@ class PlayerSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         if model:
             self.Meta.model = model
-            self.Meta.fields = ('round_number', 'pk')
-            names = [f.name for f in model._meta.get_fields()]
+            names = [f.name for f in model._meta.get_fields() if not f.related_model]
             self.Meta.fields = names
-
-
-class ParticipantSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Participant
-        depth = 1
-        fields = ('id', 'code',)
-
-    def to_representation(self, instance):
-        from otree.models.player import BasePlayer
-        fff = instance._meta.get_fields()
-        for f in fff:
-            if f.related_model:
-                if f.related_model.__base__ is BasePlayer:
-                    self.Meta.fields = self.Meta.fields + (f.name,)
-                    setattr(self, f.name, PlayerSerializer(many=True, read_only=True, model=f.related_model))
-
-        ret = super().to_representation(instance)
-        return ret
-
-
-class SubSessionSerializer(serializers.ModelSerializer):
-    class Meta:
-        ...
-
-    def __init__(self, model, *args, **kwargs):
-        self.Meta.model = model
-        self.Meta.fields = ('id', 'round_number')
-        super().__init__(*args, **kwargs)
-
 
     def get_fields(self):
         fields = super().get_fields()
@@ -69,18 +75,9 @@ class SubSessionSerializer(serializers.ModelSerializer):
 class SessionSerializer(serializers.ModelSerializer):
     participant_set = ParticipantSerializer(many=True)
 
-    # testing_ext_subsession =
     class Meta:
         model = Session
         fields = ('id', 'is_demo', 'num_participants', 'code', 'vars', 'participant_set',)
-
-    def __init__(self, instance, *args, **kwargs):
-
-        # print()
-        # for f in self.Meta.model._meta.get_fields():
-        #     if f.name == 'testing_ext_subsession':
-        #         setattr(self.__class__, f.name, SubSessionSerializer(many=True, model=Subsession))
-        super().__init__(instance, *args, **kwargs)
 
     def get_fields(self):
         fields = super().get_fields()
@@ -103,10 +100,6 @@ class SpecificSessionDataView(generics.ListAPIView):
         q = Session.objects.filter(code=session_code)
         return q
 
-    def get(self, request, *args, **kwargs):
-        res = super().get(request, *args, **kwargs)
-        return res
-
 
 class AllSessionsList(TemplateView):
     template_name = 'serializer_ext/all_session_list.html'
@@ -117,18 +110,3 @@ class AllSessionsList(TemplateView):
     def get(self, request, *args, **kwargs):
         all_sessions = Session.objects.all()
         return render(request, self.template_name, {'sessions': all_sessions})
-
-
-class JsonExport(object):
-    model = Session
-    template_name = 'serializer_ext/json_export.html'
-    success_url = reverse_lazy('linked_sessions_list')
-    url_name = 'delete_linked_session'
-    url_pattern = r'^linkedsession/(?P<pk>[a-zA-Z0-9_-]+)/delete/$'
-
-    def render_to_response(self, context, **response_kwargs):
-        # Sniff if we need to return a CSV export
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="%s.csv"' % slugify(context['title'])
-
-        return response

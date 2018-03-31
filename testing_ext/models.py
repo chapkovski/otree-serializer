@@ -17,11 +17,16 @@ class Constants(BaseConstants):
 
 
 class Subsession(BaseSubsession):
+    somerand = models.IntegerField()
+
     def creating_session(self):
         import random
         import string
         N = 10
+        self.somerand = random.randint(10 ** 4, 10 ** 5)
         self.session.vars['qqqq'] = ''.join(random.choices(string.ascii_uppercase + string.digits, k=N))
+        for g in self.get_groups():
+            g.somegrouprand = random.random()
         for p in self.session.get_participants():
             p.vars['ddd'] = ''.join(random.choices(string.ascii_uppercase + string.digits, k=N))
         for p in self.get_players():
@@ -29,12 +34,12 @@ class Subsession(BaseSubsession):
 
 
 class Group(BaseGroup):
-    pass
+    somegrouprand = models.FloatField()
 
 
 # from django.db import models
 
 
-class Player( BasePlayer):
+class Player(BasePlayer):
     another_field = models.CharField(default='asdfdsa')
     myfield = models.CharField()
