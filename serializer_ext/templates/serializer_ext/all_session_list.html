@@ -23,18 +23,12 @@
                     <td>{{ s.config.display_name }}</td>
                     <td>{{ s.num_participants }}</td>
                     <td>
-                        {% if s.is_demo %}
-                            <span class="glyphicon glyphicon-ok green" aria-hidden="true"></span>
-                        {% else %}
-                            <span class="glyphicon glyphicon-remove red" aria-hidden="true"></span>
-                        {% endif %}
+                        <strong>{{ s.is_demo|yesno:'Yes, No' }}</strong>
+
                     </td>
                     <td>
-                        {% if s.is_for_mturk %}
-                            <span class="glyphicon glyphicon-ok green" aria-hidden="true"></span>
-                        {% else %}
-                            <span class="glyphicon glyphicon-remove red" aria-hidden="true"></span>
-                        {% endif %}
+                    <strong>{{ s.is_for_mturk|yesno:'Yes, No' }}</strong>
+
 
                     </td>
 
