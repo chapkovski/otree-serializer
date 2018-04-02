@@ -56,7 +56,8 @@ class oTreeSerializer(serializers.ModelSerializer):
 
 
 class PlayerSerializer(oTreeSerializer):
-    ...
+    class Meta:
+        fields = ['pk', 'group', 'subsession']
 
 
 class GroupSerializer(oTreeSerializer):
