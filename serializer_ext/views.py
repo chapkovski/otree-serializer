@@ -5,6 +5,7 @@ from .serializers import SessionSerializer
 from rest_framework import generics
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 
+
 # a view that returns json for specific session
 class SpecificSessionDataView(generics.ListAPIView):
     serializer_class = SessionSerializer
@@ -14,6 +15,14 @@ class SpecificSessionDataView(generics.ListAPIView):
         session_code = self.kwargs['session_code']
         q = Session.objects.filter(code=session_code)
         return q
+
+    def get(self, request, *args, **kwargs):
+        res = super().get(request, *args, **kwargs)
+        if request.GET.get('format') == 'json':
+            filename = 'session_{}.json'.format(self.kwargs.get('session_code'))
+            res['Content-Disposition'] = ('attachment; filename={0}'.format(filename))
+        return res
+
 
 # the view to get a list of all sessions
 class AllSessionsList(TemplateView):

@@ -39,7 +39,7 @@
                     </td>
 
                     <td><a href="{% url 'json_export'  session_code=s.code %}">view</a></td>
-                    <td><a href="{% url 'json_download'  session_code=s.code json_only=1 %}">download</a></td>
+                    <td><a href="{% url 'json_export'  session_code=s.code %}?format=json">download</a></td>
 
                 </tr>
             {% endfor %}
