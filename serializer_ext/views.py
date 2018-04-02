@@ -7,6 +7,7 @@ from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 
 # a view that returns json for specific session
 class SpecificSessionDataView(generics.ListAPIView):
+    template_name =
     serializer_class = SessionSerializer
     renderer_classes = (JSONRenderer, BrowsableAPIRenderer)
 

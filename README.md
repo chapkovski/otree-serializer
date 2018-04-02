@@ -10,3 +10,20 @@ and from there a nested serializer for `Group` is called.
 All fields added to the models are automatically added to the
 final JSON response (with the exception of fields explicitely
 filtered out by `block_fields` list in `serializers`).
+
+## Installation:
+
+ - Copy the folder to your project
+ 
+ - Add to the `settings.py`:
+ ```python
+EXTENSION_APPS = ['serializer_ext']
+```
+and the django rest framework to installed_apps:
+```python
+    INSTALLED_APPS = ['otree',
+                  'rest_framework'
+                  ]
+```
+
+That's it!
