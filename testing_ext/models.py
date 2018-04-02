@@ -27,6 +27,7 @@ class Subsession(BaseSubsession):
         self.session.vars['qqqq'] = ''.join(random.choices(string.ascii_uppercase + string.digits, k=N))
         for g in self.get_groups():
             g.somegrouprand = random.random()
+            g.anothergrand = random.randint(10 ** 2, 10 ** 3)
         for p in self.session.get_participants():
             p.vars['ddd'] = ''.join(random.choices(string.ascii_uppercase + string.digits, k=N))
         for p in self.get_players():
@@ -35,6 +36,7 @@ class Subsession(BaseSubsession):
 
 class Group(BaseGroup):
     somegrouprand = models.FloatField()
+    anothergrand = models.IntegerField()
 
 
 # from django.db import models

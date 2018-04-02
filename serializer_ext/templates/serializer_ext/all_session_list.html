@@ -1,64 +1,64 @@
 {% extends "otree/BaseAdmin.html" %}
 
 {% block title %}
-Export data from sessions
+    Export data from sessions
 {% endblock %}
 
 {% block content %}
-{%  if sessions %}
-<table class="table table-hover table-striped table-resonsive">
-    <thead>
-    <th>Session code</th>
-    <th>Config name</th>
-    <th>Number of participants</th>
-    <th>Demo</th>
-    <th>For mTurk</th>
+    {% if sessions %}
+        <table class="table table-hover table-striped table-resonsive">
+            <thead>
+            <th>Session code</th>
+            <th>Config name</th>
+            <th>Number of participants</th>
+            <th>Demo</th>
+            <th>For mTurk</th>
 
-    <th></th>
-    </thead>
-    <tbody>
-    {% for s in sessions %}
-    <tr>
-        <td>{{ s.code }}</td>
-        <td>{{ s.config.display_name }}</td>
-        <td>{{ s.num_participants }}</td>
-        <td>
-            {% if s.is_demo %}
-            <span class="glyphicon glyphicon-ok green" aria-hidden="true"></span>
-            {% else %}
-            <span class="glyphicon glyphicon-remove red" aria-hidden="true"></span>
-            {% endif %}
-        </td>
-        <td>
-            {% if s.is_for_mturk %}
-            <span class="glyphicon glyphicon-ok green" aria-hidden="true"></span>
-            {% else %}
-            <span class="glyphicon glyphicon-remove red" aria-hidden="true"></span>
-            {% endif %}
+            <th colspan="2">JSON</th>
+            </thead>
+            <tbody>
+            {% for s in sessions %}
+                <tr>
+                    <td>{{ s.code }}</td>
+                    <td>{{ s.config.display_name }}</td>
+                    <td>{{ s.num_participants }}</td>
+                    <td>
+                        {% if s.is_demo %}
+                            <span class="glyphicon glyphicon-ok green" aria-hidden="true"></span>
+                        {% else %}
+                            <span class="glyphicon glyphicon-remove red" aria-hidden="true"></span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.is_for_mturk %}
+                            <span class="glyphicon glyphicon-ok green" aria-hidden="true"></span>
+                        {% else %}
+                            <span class="glyphicon glyphicon-remove red" aria-hidden="true"></span>
+                        {% endif %}
 
-        </td>
+                    </td>
 
-        <td><a href="{% url 'json_export'  session_code=s.code  %}">download .json</a></td>
+                    <td><a href="{% url 'json_export'  session_code=s.code %}">view</a></td>
+                    <td><a href="{% url 'json_download'  session_code=s.code json_only=1 %}">download</a></td>
 
-
-    </tr>
-    {% endfor %}
-    </tbody>
-</table>
-{% else %}
-No sessions have taken place yet.
-{% endif %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        No sessions have taken place yet.
+    {% endif %}
 {% endblock %}
 
 {% block internal_styles %}
-{{ block.super }}
-<style>
-    .red {
-        color: red
-    }
+    {{ block.super }}
+    <style>
+        .red {
+            color: red
+        }
 
-    .green {
-        color: green
-    }
-</style>
+        .green {
+            color: green
+        }
+    </style>
 {% endblock %}
