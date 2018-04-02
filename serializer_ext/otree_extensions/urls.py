@@ -5,6 +5,4 @@ from django.contrib.auth.decorators import login_required
 
 urlpatterns = [
     url(r'^json_session/(?P<session_code>\w+)/$', v.SpecificSessionDataView.as_view(), name='json_export'),
-    url(r'^json_session/(?P<session_code>\w+)/(?P<json_only>[0-1]{1})/$', v.SpecificSessionDataView.as_view(),
-        name='json_download')
 ]
