@@ -9,4 +9,6 @@ _bots*s
 __temp*
 __pycache__/
 *.py[cod]
+
+!/serializer_ext/temp/.gitignore
 /serializer_ext/temp/
