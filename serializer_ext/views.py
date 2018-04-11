@@ -41,18 +41,18 @@ class EmptyJsonView(TemplateView):
 # a view that returns json for specific session
 class SpecificSessionDataView(generics.ListAPIView):
     serializer_class = SessionSerializer
-    renderer_classes = (JSONRenderer, BrowsableAPIRenderer)
+    renderer_classes = (JSONRenderer,)
 
     def get_queryset(self):
         session_code = self.kwargs['session_code']
         q = Session.objects.filter(code=session_code)
+        q.select_related('participant_set')
         return q
 
     def get(self, request, *args, **kwargs):
         res = super().get(request, *args, **kwargs)
-        if request.GET.get('format') == 'json':
-            filename = 'session_{}.json'.format(self.kwargs.get('session_code'))
-            res['Content-Disposition'] = ('attachment; filename={0}'.format(filename))
+        filename = 'session_{}.json'.format(self.kwargs.get('session_code'))
+        res['Content-Disposition'] = ('attachment; filename={0}'.format(filename))
         return res
 
 
