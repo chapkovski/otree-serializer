@@ -5,7 +5,9 @@
 {% endblock %}
 
 {% block content %}
+
     {% if sessions %}
+        f
         <table class="table table-hover table-striped table-resonsive">
             <thead>
             <th>Session code</th>
@@ -14,7 +16,7 @@
             <th>Demo</th>
             <th>For mTurk</th>
 
-            <th colspan="2">JSON</th>
+            <th>JSON</th>
             </thead>
             <tbody>
             {% for s in sessions %}
@@ -27,13 +29,11 @@
 
                     </td>
                     <td>
-                    <strong>{{ s.is_for_mturk|yesno:'Yes, No' }}</strong>
+                        <strong>{{ s.is_for_mturk|yesno:'Yes, No' }}</strong>
 
 
                     </td>
-
-                    <td><a href="{% url 'json_export'  session_code=s.code %}">view</a></td>
-                    <td><a href="{% url 'json_export'  session_code=s.code %}?format=json">download</a></td>
+                    <td><a href="{% url 'empty_json'  session_code=s.code %}">View and download</a></td>
 
                 </tr>
             {% endfor %}

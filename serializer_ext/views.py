@@ -1,9 +1,41 @@
 from otree.models import Session
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 from django.shortcuts import render
 from .serializers import SessionSerializer
 from rest_framework import generics
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
+
+import os, tempfile, zipfile
+from django.http import HttpResponse
+from wsgiref.util import FileWrapper
+
+
+def get_full_file_name(session):
+    return 'serializer_ext/temp/{}'.format(get_file_name(session))
+
+def get_file_name(session):
+    return 'session_data_{}.json'.format(session)
+
+
+class DownloadJson(TemplateView):
+    def get(self, request, *args, **kwargs):
+        session_code = self.kwargs['session_code']
+        full_filename = get_full_file_name(session_code)
+        file = open(full_filename, 'r', encoding="latin-1")
+        wrapper = FileWrapper(file)
+        response = HttpResponse(wrapper, content_type='text/plain')
+        response['Content-Length'] = os.path.getsize(full_filename)
+        response['Content-Disposition'] = 'attachment; filename={}'.format(get_file_name(session_code))
+        return response
+
+
+class EmptyJsonView(TemplateView):
+    template_name = 'serializer_ext/specific_session.html'
+
+    def get_context_data(self, **kwargs):
+        cont = super().get_context_data(**kwargs)
+        cont['session'] = self.kwargs['session_code']
+        return cont
 
 
 # a view that returns json for specific session

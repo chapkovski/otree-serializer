@@ -1,0 +1,37 @@
+{% load staticfiles otree_tags %}
+
+<script>
+    $(function () {
+        var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+        var ws_path = ws_scheme + '://' + window.location.host + "/jsonloader/session/{{ session}}";
+        var socket = new ReconnectingWebSocket(ws_path);
+
+        // Handle any errors that occur.
+        socket.onerror = function (error) {
+            console.log('WebSocket Error: ' + error);
+        };
+        // Show a connected message when the WebSocket is opened.
+        socket.onopen = function (event) {
+            console.log('connected to json loader');
+        };
+        // Handle messages sent by the server.
+        socket.onmessage = function (event) {
+            var obj = jQuery.parseJSON(event.data);
+            $("#downloadlink").attr("href", obj.download_link);
+            $("#downloadlink").show();
+            $("#json_placeholder").html(JSON.stringify(obj.data, undefined, 2));
+            $('div.titlewait').html('Data for session {{ session_code }}');
+            $('div.progresswaitwrapper').empty();
+
+        }
+        ;
+        socket.onclose = function (event) {
+            console.log('disconnected from jsonloader');
+        };
+
+
+        ;
+
+    });
+</script>
+

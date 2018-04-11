@@ -16,6 +16,15 @@ class oTreeSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ['pk', ]
 
+    def build_serializer(self, class_name, related_model, base_serializer):
+        class NestedSerializer(oTreeSerializer):
+            class Meta:
+                model = related_model
+                fields = '__all__'
+
+        field_class = type(class_name, (NestedSerializer, base_serializer), {})
+        return field_class
+
     def get_field_names(self, declared_fields, info):
         # we filter out all related models not to be in an everlasting loop. We add some of them back in
         # get_deeper_models later
@@ -50,8 +59,9 @@ class oTreeSerializer(serializers.ModelSerializer):
                             fname = deeper['field_name']
                         else:
                             fname = f.name
-                        fields[fname] = deeper['serializer'](many=True, model=f.related_model)
-
+                        fields[fname] = self.build_serializer(class_name='serializer_{}'.format(fname),
+                                                              related_model=f.related_model,
+                                                              base_serializer=deeper['serializer'])(many=True)
         return fields
 
 
@@ -78,14 +88,13 @@ class ParticipantSerializer(oTreeSerializer):
 
 class SubSessionSerializer(oTreeSerializer):
     class Meta:
-        fields = ['group_set']
+        fields = ()
 
     def get_deeper_models(self):
         return {
             'base': BaseGroup,
             'serializer': GroupSerializer,
             'field_name': 'group_set',
-
         }
 
 

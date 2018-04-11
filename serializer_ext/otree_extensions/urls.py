@@ -4,5 +4,10 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 
 urlpatterns = [
+
     url(r'^json_session/(?P<session_code>\w+)/$', v.SpecificSessionDataView.as_view(), name='json_export'),
+    url(r'^json_session/(?P<session_code>\w+)/$', v.SpecificSessionDataView.as_view(), name='partial_json'),
+    url(r'^empty_json_session/(?P<session_code>\w+)/$', v.EmptyJsonView.as_view(), name='empty_json'),
+    url(r'^download_json/(?P<session_code>\w+)/$', v.DownloadJson.as_view(), name='download_json'),
 ]
+
