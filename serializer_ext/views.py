@@ -19,6 +19,9 @@ class EmptyJsonView(TemplateView):
         cont['session'] = self.kwargs['session_code']
         return cont
 
+from rest_framework_extensions.cache.decorators import (
+cache_response
+)
 
 # a view that returns json for specific session
 class SpecificSessionDataView(generics.ListAPIView):
@@ -36,6 +39,7 @@ class SpecificSessionDataView(generics.ListAPIView):
         q.prefetch_related('participant_set')
         return q
 
+    @cache_response(60 * 15)
     def get(self, request, *args, **kwargs):
         res = super().get(request, *args, **kwargs)
         filename = 'session_{}.json'.format(self.kwargs.get('session_code'))
