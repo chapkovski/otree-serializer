@@ -12,6 +12,7 @@ block_fields = ['_gbat_arrived', '_gbat_grouped', '_index_in_subsessions', '_ind
                 '_anonymous_code']
 
 
+
 class oTreeSerializer(serializers.ModelSerializer):
     class Meta:
         fields = ['pk', ]

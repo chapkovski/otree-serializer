@@ -10,24 +10,6 @@ from django.http import HttpResponse
 from wsgiref.util import FileWrapper
 
 
-def get_full_file_name(session):
-    return 'serializer_ext/temp/{}'.format(get_file_name(session))
-
-def get_file_name(session):
-    return 'session_data_{}.json'.format(session)
-
-
-class DownloadJson(TemplateView):
-    def get(self, request, *args, **kwargs):
-        session_code = self.kwargs['session_code']
-        full_filename = get_full_file_name(session_code)
-        file = open(full_filename, 'r', encoding="latin-1")
-        wrapper = FileWrapper(file)
-        response = HttpResponse(wrapper, content_type='text/plain')
-        response['Content-Length'] = os.path.getsize(full_filename)
-        response['Content-Disposition'] = 'attachment; filename={}'.format(get_file_name(session_code))
-        return response
-
 
 class EmptyJsonView(TemplateView):
     template_name = 'serializer_ext/specific_session.html'
@@ -43,10 +25,15 @@ class SpecificSessionDataView(generics.ListAPIView):
     serializer_class = SessionSerializer
     renderer_classes = (JSONRenderer,)
 
+    def get_renderer_context(self):
+        ret = super().get_renderer_context()
+        ret['indent'] = 4
+        return ret
+
     def get_queryset(self):
         session_code = self.kwargs['session_code']
         q = Session.objects.filter(code=session_code)
-        q.select_related('participant_set')
+        q.prefetch_related('participant_set')
         return q
 
     def get(self, request, *args, **kwargs):

@@ -77,8 +77,6 @@ DATABASES = {
 }
 
 # if an app is included in SESSION_CONFIGS, you don't need to list it here
-INSTALLED_APPS = ['otree',
-                  'rest_framework'
-                  ]
+INSTALLED_APPS = ['otree', ]
 
 otree.settings.augment_settings(globals())

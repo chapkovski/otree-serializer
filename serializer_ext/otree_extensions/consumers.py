@@ -4,7 +4,6 @@ from otree.models import Session
 from serializer_ext.serializers import SessionSerializer
 from rest_framework import generics
 from django.urls import reverse
-from serializer_ext.views import get_full_file_name
 
 
 class JsonLoader(WebsocketConsumer):
@@ -20,11 +19,9 @@ class JsonLoader(WebsocketConsumer):
         self.clean_kwargs(kwargs)
         session = Session.objects.filter(code=self.session)
         result = SessionSerializer(session, many=True, )
-        with open(get_full_file_name(self.session), "w+") as f:
-            f.write(json.dumps(result.data, indent=4))
-            download_link = reverse('download_json', kwargs={'session_code': self.session})
-            self.send({'data': result.data,
-                       'download_link': download_link})
+        download_link = reverse('json_export', kwargs={'session_code': self.session})
+        self.send({'data': result.data,
+                   'download_link': download_link})
 
     def send(self, content):
         self.message.reply_channel.send({'text': json.dumps(content)})
