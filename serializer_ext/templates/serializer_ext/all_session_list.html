@@ -34,7 +34,7 @@
 
                     </td>
                     <td><a href="{% url 'empty_json'  session_code=s.code %}">View and download</a></td>
-                <td><a href="{% url 'json_export'  session_code=s.code %}">Download</a></td>
+                <td><a class="downloadjson"  data-session="{{s.code}}" href="">Download</a></td>
 
                 </tr>
             {% endfor %}
@@ -45,15 +45,18 @@
     {% endif %}
 {% endblock %}
 
-{% block internal_styles %}
-    {{ block.super }}
-    <style>
-        .red {
-            color: red
+{% block internal_scripts %}
+<script>
+    $(".downloadjson").click(function () {
+      var session = $(this).data('session')
+      $.ajax({
+        url: {% url 'json_export' session_code=session %},
+        dataType: 'json',
+        success: function (data) {
+            console.log('we are ready!');
         }
+      });
 
-        .green {
-            color: green
-        }
-    </style>
+    });
+  </script>
 {% endblock %}
