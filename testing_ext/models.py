@@ -45,3 +45,6 @@ class Group(BaseGroup):
 class Player(BasePlayer):
     another_field = models.CharField(default='asdfdsa')
     myfield = models.CharField()
+
+for i in range(50):
+        Player.add_to_class('data{}'.format(i), models.IntegerField())

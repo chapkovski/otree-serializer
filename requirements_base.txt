@@ -1,2 +1,1 @@
 otree>=2.0.27
-drf-extensions==0.3.1

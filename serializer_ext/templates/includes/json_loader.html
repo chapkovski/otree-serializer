@@ -2,8 +2,9 @@
 
 <script>
     $(function () {
+
         var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
-        var ws_path = ws_scheme + '://' + window.location.host + "/jsonloader/session/{{ session}}";
+        var ws_path = ws_scheme + '://' + window.location.host + "/jsonloader/";
         var socket = new ReconnectingWebSocket(ws_path);
 
         // Handle any errors that occur.
@@ -17,18 +18,30 @@
         // Handle messages sent by the server.
         socket.onmessage = function (event) {
             var obj = jQuery.parseJSON(event.data);
-            $("#downloadlink").attr("href", obj.download_link);
-            $("#downloadlink").show();
-            $("#json_placeholder").html(JSON.stringify(obj.data, undefined, 2));
-            $('div.titlewait').html('Data for session {{ session_code }}');
-            $('div.progresswaitwrapper').empty();
+            if (obj.file_ready) {
+                $('#progress_' + obj.session_code).hide();
+                $('#link_' + obj.session_code).show();
+                window.location.href = obj.download_link;
+            }
 
         }
         ;
         socket.onclose = function (event) {
             console.log('disconnected from jsonloader');
         };
+        $('.json_download').click(function () {
+            var session_code = $(this).data('session');
+            var $progress_bar = $('#progress_' + session_code);
+            $('#link_' + session_code).hide();
+            $progress_bar.show();
+            $progress_bar.first().addClass('progress-bar progress-bar-striped progress-bar-animated');
 
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({'session_code': session_code}));
+            }
+
+            return false;
+        });
 
         ;
 
